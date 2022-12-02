@@ -1,0 +1,75 @@
+
+%% Spearman correlation
+
+%[RHO,PVAL] = corr(x,y,'Type','Spearman')
+%enter which variables to compare in x and y, in long 200x1double form
+
+%% Pearson correlation
+
+% uses long form 200x1 double variable, eg:
+
+corrcoef(m_halo_ind_long,m_halo_emerge_long)
+
+%% Taken from class to get Bootstrapped 95% CI: Method 3: bootstrap!
+   %
+   % Resample the data with replacement to get new estimates of mu 
+   % Note that here we do not make any assumptions about the nature of the
+   % real distribution.
+   % use long form 200x1double variables
+
+n = 20
+alpha = 0.95
+NB = 1000; % number of bootstraps
+
+mu_star = zeros(NB, 1);
+   for ii = 1:NB
+      mu_star(ii) = mean(datasample(f_halo_emerge_long, n));
+   end
+   
+% Now report the CI directly from the bootstrapped distribution
+fprintf('3 : CI=[%.2f %.2f]\n', ...
+prctile(mu_star, 100*(1-alpha)/2), prctile(mu_star, 100*(alpha+(1-alpha)/2)))
+
+%% Hartigan's Dip Test Found on Steve Van Hooser's GitHub (Brandeis squirrel trappers 4eva!)
+
+% --> to do only females, enter eg:
+% [dip, p_value, xlow,xup]=HartigansDipSignifTest(halo_induct(:,21:40),10000)
+ 
+% --> to do only males, enter eg:
+% [dip, p_value, xlow,xup]=HartigansDipSignifTest(halo_induct(:,1:20),10000)
+
+% --> to do males and females together, enter eg:
+% [dip, p_value, xlow,xup]=HartigansDipSignifTest(halo_induct,10000)
+
+%  function		[dip,p_value, xlow,xup]=HartigansDipSignifTest(xpdf,nboot)
+%
+% calculates Hartigan's DIP statistic and its significance for the empirical
+% p.d.f  XPDF (vector of sample values).
+%
+% This routine calls the matlab routine 'HartigansDipTest' that actually
+% calculates the DIP NBOOT is the user-supplied sample size of boot-strap
+% Code by F. Mechler (27 August 2002)
+
+% calculate the DIP statistic from the empirical pdf
+
+% sort and normalize to be in 0..1
+[dip,xlow,xup, ifault, gcm, lcm, mn, mj]=HartigansDipTest(xpdf);
+N=length(xpdf);
+
+% calculate a bootstrap sample of size NBOOT of the dip statistic for a uniform pdf of sample size N (the same as empirical pdf)
+boot_dip=[];
+for i=1:nboot
+   unifpdfboot=sort(unifrnd(0,1,1,N));
+   [unif_dip]=HartigansDipTest(unifpdfboot);
+   boot_dip=[boot_dip; unif_dip];
+end;
+boot_dip=sort(boot_dip);
+p_value=sum(dip<boot_dip)/nboot;
+
+% Plot Boot-strap sample and the DIP statistic of the empirical pdf
+figure(1); clf;
+[hy,hx]=hist(boot_dip,100); 
+bar(hx,hy,'k'); hold on;
+plot([dip dip],[0 max(hy)*1.1],'r:');
+
+%% 
